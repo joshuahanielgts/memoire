@@ -5,7 +5,7 @@ const Philosophy = () => {
   const { ref: r2, visible: v2 } = useReveal();
 
   return (
-    <section className="py-32 md:py-48 px-6">
+    <section id="philosophy" className="py-32 md:py-48 px-6">
       <div className="max-w-4xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-16 md:gap-12">
           <div ref={r1} className={`reveal ${v1 ? "visible" : ""} md:col-span-5 space-y-6`}>
