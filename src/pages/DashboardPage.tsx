@@ -62,10 +62,10 @@ const getStatusIndex = (status: string) => statusSteps.indexOf(status);
 
 const DashboardPage = () => {
   const { user, signOut } = useAuth();
-  const ref1 = useReveal();
-  const ref2 = useReveal();
-  const ref3 = useReveal();
-  const ref4 = useReveal();
+  const reveal1 = useReveal();
+  const reveal2 = useReveal();
+  const reveal3 = useReveal();
+  const reveal4 = useReveal();
 
   const displayName =
     user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Guest";
