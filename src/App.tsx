@@ -3,23 +3,25 @@ import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Navbar from "./components/home/Navbar.tsx";
-import Index from "./pages/Index.tsx";
-import CreatePage from "./pages/CreatePage.tsx";
-import NotFound from "./pages/NotFound.tsx";
-
+import { AuthProvider } from "@/contexts/AuthContext";
+import Navbar from "./components/home/Navbar";
+import Index from "./pages/Index";
+import CreatePage from "./pages/CreatePage";
+import AuthPage from "./pages/AuthPage";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const AppContent = () => {
   const location = useLocation();
-  const showNavbar = location.pathname !== "/create";
+  const hideNavbar = location.pathname === "/create" || location.pathname === "/auth";
   return (
     <>
-      {showNavbar && <Navbar />}
+      {!hideNavbar && <Navbar />}
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/create" element={<CreatePage />} />
+        <Route path="/auth" element={<AuthPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
@@ -32,7 +34,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AppContent />
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

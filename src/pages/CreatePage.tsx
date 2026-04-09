@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import StepInput from "@/components/create/StepInput";
 import StepRefinement from "@/components/create/StepRefinement";
 import StepProcessing from "@/components/create/StepProcessing";

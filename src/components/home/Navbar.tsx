@@ -76,10 +76,13 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* Login */}
-        <button className="text-[11px] tracking-[0.2em] uppercase font-sans px-5 py-2 border border-border/60 text-muted-foreground rounded-sm hover:bg-foreground hover:text-background hover:border-foreground transition-all duration-500">
-          Login
-        </button>
+        {/* Login / Sign Up */}
+        <Link
+          to="/auth"
+          className="text-[11px] tracking-[0.2em] uppercase font-sans px-5 py-2 border border-border/60 text-muted-foreground rounded-sm hover:bg-foreground hover:text-background hover:border-foreground transition-all duration-500"
+        >
+          Login / Sign Up
+        </Link>
       </div>
     </nav>
   );
