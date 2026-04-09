@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { type ScentComposition } from "@/pages/CreatePage";
 
 const options = [
@@ -26,6 +27,7 @@ interface StepPurchaseProps {
 
 const StepPurchase = ({ composition }: StepPurchaseProps) => {
   const [selected, setSelected] = useState(1);
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 py-24">
@@ -75,6 +77,14 @@ const StepPurchase = ({ composition }: StepPurchaseProps) => {
           >
             Return to Atelier
           </Link>
+          {user && (
+            <Link
+              to="/dashboard"
+              className="text-muted-foreground/40 text-[10px] tracking-[0.15em] uppercase hover:text-accent transition-colors duration-500 font-sans"
+            >
+              Go to Dashboard
+            </Link>
+          )}
         </div>
       </div>
     </div>

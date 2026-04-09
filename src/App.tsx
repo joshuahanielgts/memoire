@@ -8,13 +8,14 @@ import Navbar from "./components/home/Navbar";
 import Index from "./pages/Index";
 import CreatePage from "./pages/CreatePage";
 import AuthPage from "./pages/AuthPage";
+import DashboardPage from "./pages/DashboardPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const AppContent = () => {
   const location = useLocation();
-  const hideNavbar = location.pathname === "/create" || location.pathname === "/auth";
+  const hideNavbar = location.pathname === "/create" || location.pathname === "/auth" || location.pathname === "/dashboard";
   return (
     <>
       {!hideNavbar && <Navbar />}
@@ -22,6 +23,7 @@ const AppContent = () => {
         <Route path="/" element={<Index />} />
         <Route path="/create" element={<CreatePage />} />
         <Route path="/auth" element={<AuthPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
