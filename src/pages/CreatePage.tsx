@@ -123,7 +123,7 @@ const CreatePage = () => {
       )}
       {step === 3 && <StepProcessing onComplete={next} />}
       {step === 4 && <StepResults compositions={mockResults} onSelect={handleSelect} />}
-      {step === 5 && selected && <StepDetail composition={selected} onNext={next} />}
+      {step === 5 && selected && <StepDetail composition={selected} onNext={handleProceedToCheckout} />}
       {step === 6 && selected && <StepPurchase composition={selected} />}
     </div>
   );
