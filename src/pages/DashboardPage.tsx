@@ -62,7 +62,7 @@ const getStatusIndex = (status: string) => statusSteps.indexOf(status);
 
 const DashboardPage = () => {
   const { user, signOut } = useAuth();
-  const reveal1 = useReveal();
+  const reveal1 = useReveal(); 
   const reveal2 = useReveal();
   const reveal3 = useReveal();
   const reveal4 = useReveal();
