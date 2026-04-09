@@ -98,7 +98,7 @@ const DashboardPage = () => {
 
       <div className="max-w-4xl mx-auto px-6 pt-32 pb-24 space-y-20">
         {/* Welcome */}
-        <div ref={ref1} className="reveal space-y-3">
+        <div ref={reveal1.ref} className="reveal space-y-3">
           <p className="text-muted-foreground/40 text-[10px] tracking-[0.3em] uppercase font-sans">
             Your Private Atelier
           </p>
@@ -112,7 +112,7 @@ const DashboardPage = () => {
         </div>
 
         {/* Active Compositions */}
-        <div ref={ref2} className="reveal space-y-8">
+        <div ref={reveal2.ref} className="reveal space-y-8">
           <div className="space-y-1">
             <h2 className="font-serif text-2xl text-foreground font-light">
               Currently in composition
@@ -173,7 +173,7 @@ const DashboardPage = () => {
         </div>
 
         {/* Past Compositions */}
-        <div ref={ref3} className="reveal space-y-8">
+        <div ref={reveal3.ref} className="reveal space-y-8">
           <div className="space-y-1">
             <h2 className="font-serif text-2xl text-foreground font-light">
               Past compositions
@@ -211,7 +211,7 @@ const DashboardPage = () => {
         </div>
 
         {/* Account */}
-        <div ref={ref4} className="reveal space-y-6">
+        <div ref={reveal4.ref} className="reveal space-y-6">
           <h2 className="font-serif text-2xl text-foreground font-light">
             Account
           </h2>
