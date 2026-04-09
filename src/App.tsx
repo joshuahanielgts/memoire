@@ -8,6 +8,7 @@ import Index from "./pages/Index.tsx";
 import CreatePage from "./pages/CreatePage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
+
 const queryClient = new QueryClient();
 
 const AppContent = () => {
