@@ -1,9 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const { user } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -76,13 +78,23 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* Login / Sign Up */}
-        <Link
-          to="/auth"
-          className="text-[11px] tracking-[0.2em] uppercase font-sans px-5 py-2 border border-border/60 text-muted-foreground rounded-sm hover:bg-foreground hover:text-background hover:border-foreground transition-all duration-500"
-        >
-          Login / Sign Up
-        </Link>
+        {/* Auth / Dashboard */}
+        <div className="flex items-center gap-6">
+          {user && (
+            <Link
+              to="/dashboard"
+              className="text-[11px] tracking-[0.2em] uppercase font-sans text-muted-foreground hover:text-foreground transition-colors duration-500"
+            >
+              Dashboard
+            </Link>
+          )}
+          <Link
+            to={user ? "/dashboard" : "/auth"}
+            className="text-[11px] tracking-[0.2em] uppercase font-sans px-5 py-2 border border-border/60 text-muted-foreground rounded-sm hover:bg-foreground hover:text-background hover:border-foreground transition-all duration-500"
+          >
+            {user ? "My Account" : "Login / Sign Up"}
+          </Link>
+        </div>
       </div>
     </nav>
   );

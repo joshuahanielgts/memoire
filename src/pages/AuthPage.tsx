@@ -42,8 +42,11 @@ const AuthPage = () => {
       return;
     }
 
-    // Successful login — return to checkout or home
-    navigate(returnTo || "/");
+    // Successful login — brief transition then redirect
+    toast.success("Returning to your composition…");
+    setTimeout(() => {
+      navigate(returnTo || "/");
+    }, 800);
   };
 
   const fromCheckout = returnTo === "/create?resume=checkout";
