@@ -59,6 +59,17 @@ const CreatePage = () => {
   const [environment, setEnvironment] = useState<string[]>([]);
   const [intensity, setIntensity] = useState(50);
   const [selected, setSelected] = useState<ScentComposition | null>(null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Resume to checkout after auth
+  const resumeCheckout = searchParams.get("resume") === "checkout";
+  useState(() => {
+    if (resumeCheckout && user) {
+      setStep(6);
+    }
+  });
 
   const next = useCallback(() => setStep((s) => s + 1), []);
 
@@ -66,6 +77,15 @@ const CreatePage = () => {
     setSelected(comp);
     setStep(5);
   };
+
+  // Auth gate: when moving to step 6 (purchase), check if logged in
+  const handleProceedToCheckout = useCallback(() => {
+    if (!user) {
+      navigate("/auth?returnTo=/create?resume=checkout");
+      return;
+    }
+    setStep(6);
+  }, [user, navigate]);
 
   return (
     <div className="min-h-screen bg-background">
