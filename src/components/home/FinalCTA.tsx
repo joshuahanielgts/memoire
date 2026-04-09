@@ -5,7 +5,7 @@ const FinalCTA = () => {
   const { ref, visible } = useReveal();
 
   return (
-    <section className="py-32 md:py-48 px-6">
+    <section id="create-section" className="py-32 md:py-48 px-6">
       <div ref={ref} className={`reveal ${visible ? "visible" : ""} max-w-2xl mx-auto text-center space-y-8`}>
         <h2 className="font-serif text-4xl md:text-6xl text-foreground font-light">
           Create your scent
