@@ -55,14 +55,14 @@ const CreationCard = ({ creation, index }: { creation: typeof creations[0]; inde
     >
       <div className="border border-border/50 transition-all duration-500 hover:border-accent/50 hover:bg-secondary/30 overflow-hidden">
         {/* Bottle image */}
-        <div className="relative overflow-hidden bg-secondary/20">
+        <div className="relative overflow-hidden bg-background">
           <img
             src={creation.image}
             alt={`${creation.name} perfume bottle`}
             loading="lazy"
             width={768}
             height={1024}
-            className={`w-full h-64 md:h-80 object-contain object-center transition-transform duration-700 ${
+            className={`w-full h-64 md:h-80 object-contain object-center transition-transform duration-700 drop-shadow-[0_8px_24px_rgba(0,0,0,0.12)] ${
               hovered ? "scale-105" : "scale-100"
             }`}
           />
