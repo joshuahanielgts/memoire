@@ -1,420 +1,293 @@
 # Memoire - Scented Identity Project
 
-Memoire is a luxury-styled fragrance composition web app. A user describes a memory, refines mood/context, generates a scent profile with AI, and places a format-based order.
+Memoire is a production-ready, luxury-styled fragrance composition web application. Users capture sensory memories, refine mood metrics, generate AI-composed bespoke scent profiles, and execute verified format-based checkouts.
 
-This project uses:
-- React + Vite + TypeScript frontend
-- Supabase for auth, database, and edge functions
-- Gemini 2.5 Flash for fragrance concept generation
+The platform is meticulously engineered for high availability, state resilience, and secure payment handling.
+
+This project utilizes:
+- **Frontend**: React 18 + Vite + TypeScript
+- **Backend**: Supabase (Authentication, PostgreSQL + RLS, Deno Edge Functions)
+- **Payment Engine**: Razorpay Native API (End-to-End Verified Checkout)
+- **AI Engine**: Gemini 2.0 Flash for immersive fragrance generation
 
 ---
 
 ## Table of Contents
 
-- [Product Overview](#product-overview)
-- [Current Implementation Status](#current-implementation-status)
+- [Product Capabilities](#product-capabilities)
+- [Production Status & Hardening](#production-status--hardening)
 - [Architecture](#architecture)
 - [End-to-End User Flow](#end-to-end-user-flow)
 - [Folder Structure](#folder-structure)
-- [Environment Variables](#environment-variables)
-- [Setup and Run](#setup-and-run)
-- [Database Schema and RLS](#database-schema-and-rls)
-- [Edge Functions](#edge-functions)
-- [Frontend Data Layer](#frontend-data-layer)
-- [Routing](#routing)
-- [Testing](#testing)
-- [Scripts](#scripts)
-- [Brand Assets](#brand-assets)
-- [Known Gaps and TODOs](#known-gaps-and-todos)
+- [Environment Configuration](#environment-configuration)
+- [Setup and Local Run](#setup-and-local-run)
+- [Database Architecture & Relations](#database-architecture--relations)
+- [Edge Functions API](#edge-functions-api)
+- [Frontend Engineering](#frontend-engineering)
+- [Static & Behavioral Testing](#static--behavioral-testing)
+- [Deployment Pipeline (CI/CD)](#deployment-pipeline-cicd)
 
 ---
 
-## Product Overview
+## Product Capabilities
 
-Core product capabilities:
-- Branded landing and narrative homepage
-- 6-step scent composition wizard at `/create`
-- Email/password auth (Supabase) with `full_name` metadata
-- AI fragrance generation via Supabase edge function (`generate-fragrance`) and Gemini
-- Order creation via Supabase edge function (`create-order`)
-- User dashboard with real composition history and summary stats
+Core product mechanics:
+- **Narrative Homepage**: Premium styled landing with scroll-revealed brand philosophies.
+- **Composition Wizard**: A 6-step immersive experience (`/create`) converting sensory descriptions to structured inputs.
+- **State-Machine Generator**: Throttled, background-safe AI fragrance generation using Supabase and Google Gemini.
+- **Secure Purchase Funnel**: Multi-format product selection dynamically localized in Indian Rupees (INR).
+- **Live Dashboard**: Instant lookup of historical compositions, uniqueness certificates, and real-time delivery order summaries.
 
 ---
 
-## Current Implementation Status
+## Production Status & Hardening
 
-Implemented and wired:
-- Draft composition creation to `public.compositions`
-- AI generation response persisted to `generated_result` and `status = complete`
-- Dashboard pulls real rows from Supabase (`compositions`, `orders`)
-- Checkout creates real `orders` rows and updates `selected_format`
-- Resume flow supported via `/create?resume={composition_id}`
-- Auth-gated checkout behavior
+The platform has undergone rigorous hardening to meet security standards:
 
-Partially implemented:
-- Payment processing is not integrated yet (Razorpay TODO exists)
-- Playwright is configured but no dedicated npm script is defined
-- Test coverage is minimal (single example test)
+*   **[v] Razorpay Native Integration**: Connected through a 3-way handshake: Order RPC Creation &rarr; Razorpay Order Token &rarr; Frontend checkout frame &rarr; Server-side HMAC-SHA256 validation.
+*   **[v] State Recovery Job**: Embedded SQL cron/triggers automatically reset hung `processing` composition tasks back to `draft` after a 5-minute timeout.
+*   **[v] Transaction Atomicity**: An isolated PostgreSQL RPC (`create_order_atomic`) enforces strictly unique order mutations using client-transmitted idempotency keys.
+*   **[v] Rate Limiting Engine**: Edge functions restrict users to **10 generation tasks per hour** via custom `generation_quota` schemas.
+*   **[v] Route Safeguards**: Implemented strict internal-path redirect allowlists and protected route component guards.
 
 ---
 
 ## Architecture
 
-### Frontend
-- Framework: React 18 + TypeScript
-- Build tool: Vite 5
-- Routing: `react-router-dom`
-- Data fetching/mutations: TanStack Query
-- UI: Tailwind + shadcn/ui + Radix primitives
+### Frontend Layer
+- **Builder**: Vite 5 with aggressive, independently-cached manual chunks (`vendor-react`, `vendor-supabase`, `vendor-query`, `vendor-ui`).
+- **State management**: Context-driven authentication alongside cache-optimized TanStack Query hooks.
+- **Styling**: Tailwind CSS 3 + Radix UI primitives + curated typography + Sonner notifications.
 
-### Backend (Supabase)
-- Auth: Supabase Auth (session persisted in browser)
-- DB: PostgreSQL with RLS
-- Server logic: Deno edge functions
-  - `generate-fragrance` (Gemini)
-  - `create-order` (order record + format update)
+### Backend Layer (Supabase)
+- **Security**: Strict, object-level Row Level Security (RLS) enforcing isolated ownership.
+- **Execution Engines**: Deno runtime serverless Edge functions configured with granular origin-safe CORS handlers.
 
-### AI Layer
-- Model: `gemini-2.5-flash`
-- Invocation: direct HTTPS call from edge function using `fetch`
-- Response contract: strict JSON structure parsed and stored in DB
+### AI Engine Layer
+- **Model**: `gemini-2.0-flash`
+- **Mode**: Server-side secure HTTPS execution with automatic 2-pass structural parse fallback and linear backoff on Gemini timeouts.
 
 ---
 
 ## End-to-End User Flow
 
-1. User opens `/` and starts composition.
-2. In `/create`:
-   - Step 1 captures memory text
-   - Step 2 captures refinements (mood/environment/intensity)
-   - Draft composition is inserted
-   - `generate-fragrance` is called
-   - Step 3 loading UI runs while generation completes
-   - Step 4/5 show generated composition
-3. Checkout (Step 6):
-   - If unauthenticated, user is redirected to `/auth` with `returnTo`
-   - On completion, `create-order` edge function is invoked
-4. `/dashboard` shows compositions and order summary from live Supabase data.
-5. `View Report` links back to `/create?resume={composition_id}` to rehydrate generated result.
+1. **Capture**: User inputs text memories and slider-based sensory configurations.
+2. **Creation**: Draft persisted &rarr; user rate-limit verified &rarr; edge function invoked &rarr; Gemini builds notes profile.
+3. **Presentation**: Component deserializes JSON composition properties into visual scent cards.
+4. **Format Selection**: Choice between Luxury Perfume, Oils, Candles, or Diffusers using a single source of truth catalog.
+5. **Authentication Gate**: Seamless, allowlist-safe OAuth/Email redirection preserving configuration state.
+6. **Secured Checkout**: Payment initiated via Edge function, handled via native Razorpay window, verified server-side with HMAC hashing, and updated synchronously in PostgreSQL.
+7. **Fulfillment View**: Finalized orders are recorded, locking in details for lookup in the `/dashboard`.
 
 ---
 
 ## Folder Structure
 
 ```text
-scented-identity-project-main/
+scented-identity-project/
+|-- .github/
+|   `-- workflows/
+|       `-- ci.yml                  # Automated validation pipeline
+|
 |-- public/
-|   |-- favicon.png
 |   |-- logo-full.png
-|   |-- placeholder.svg
-|   `-- robots.txt
+|   `-- favicon.png
 |
 |-- src/
-|   |-- assets/
 |   |-- components/
+|   |   |-- ProtectedRoute.tsx      # Route safeguard wrapper
 |   |   |-- BrandLogo.tsx
-|   |   |-- NavLink.tsx
 |   |   |-- create/
 |   |   |   |-- StepInput.tsx
 |   |   |   |-- StepRefinement.tsx
 |   |   |   |-- StepProcessing.tsx
-|   |   |   |-- StepResults.tsx
+|   |   |   |-- StepResults.tsx     # Aligned for single composition display
 |   |   |   |-- StepDetail.tsx
-|   |   |   `-- StepPurchase.tsx
-|   |   |-- home/
-|   |   |   |-- Navbar.tsx
-|   |   |   |-- Footer.tsx
-|   |   |   |-- Hero.tsx
-|   |   |   |-- Process.tsx
-|   |   |   |-- FeaturedCreations.tsx
-|   |   |   |-- Philosophy.tsx
-|   |   |   |-- ReportPreview.tsx
-|   |   |   `-- FinalCTA.tsx
-|   |   `-- ui/ (shadcn components)
+|   |   |   `-- StepPurchase.tsx    # Razorpay-native UI element
+|   |   `-- ui/                     # Modular shadcn primitives
 |   |
 |   |-- contexts/
 |   |   `-- AuthContext.tsx
 |   |
 |   |-- hooks/
-|   |   |-- useCompositionActions.ts
-|   |   |-- useCompositions.ts
-|   |   |-- useReveal.ts
-|   |   |-- use-toast.ts
-|   |   `-- use-mobile.tsx
-|   |
-|   |-- integrations/
-|   |   `-- supabase/
-|   |       |-- client.ts
-|   |       `-- types.ts
+|   |   |-- useCompositionActions.ts # Remote API hook managers
+|   |   `-- useCompositions.ts
 |   |
 |   |-- lib/
+|   |   |-- pricing.ts              # Canonical INR pricing registry
 |   |   |-- compositions.ts
 |   |   `-- utils.ts
 |   |
 |   |-- pages/
-|   |   |-- Index.tsx
-|   |   |-- CreatePage.tsx
-|   |   |-- AuthPage.tsx
-|   |   |-- DashboardPage.tsx
-|   |   `-- NotFound.tsx
+|   |   |-- CreatePage.tsx          # Step engine + Resume error boundaries
+|   |   |-- AuthPage.tsx            # Redirection safelisting core
+|   |   `-- DashboardPage.tsx
 |   |
 |   |-- test/
 |   |   |-- setup.ts
-|   |   `-- example.test.ts
+|   |   `-- auth.test.tsx           # Auth flows and ProtectedRoute assertions
 |   |
-|   |-- App.tsx
-|   |-- main.tsx
-|   |-- index.css
-|   `-- App.css
+|   `-- App.tsx                     # Routes + Consolidated Sonner systems
 |
 |-- supabase/
 |   |-- config.toml
 |   |-- migrations/
-|   |   `-- 001_initial_schema.sql
+|   |   |-- 001_initial_schema.sql
+|   |   |-- 002_add_failed_status_and_rpc.sql # Throttling, atomicity, recovery
+|   |   `-- 003_razorpay.sql                  # Payment state persistence
 |   `-- functions/
-|       |-- .env.example
-|       |-- .env
 |       |-- generate-fragrance/
-|       |   `-- index.ts
-|       `-- create-order/
-|           `-- index.ts
+|       |-- create-order/
+|       |-- initiate-payment/       # Dynamic Razorpay Order Token retrieval
+|       `-- verify-payment/         # HMAC signature security validation
 |
-|-- .env.example
-|-- index.html
-|-- package.json
-|-- vite.config.ts
-|-- vitest.config.ts
-|-- playwright.config.ts
+|-- vite.config.ts                  # Modular chunk configuration
 `-- README.md
 ```
 
 ---
 
-## Environment Variables
+## Environment Configuration
 
-### Frontend (`.env` / `.env.example`)
+### Frontend (.env)
+```ini
+VITE_SUPABASE_URL=https://mduapoxscchysvhlajaw.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<your-anon-key>
+VITE_SUPABASE_PROJECT_ID=mduapoxscchysvhlajaw
+```
 
-- `VITE_SUPABASE_URL=`
-- `VITE_SUPABASE_PUBLISHABLE_KEY=`
-- `VITE_SUPABASE_PROJECT_ID=`
-
-Used by `src/integrations/supabase/client.ts`.
-
-### Supabase Edge Functions (`supabase/functions/.env`)
-
-- `GEMINI_API_KEY=` - Gemini API key used in `generate-fragrance`
-- `SUPABASE_URL=` - Supabase project URL for admin client in functions
-- `SUPABASE_SERVICE_ROLE_KEY=` - service role key for server-side function operations
+### Edge Functions (Supabase Platform Secrets)
+Set using the Supabase CLI via: `supabase secrets set KEY=VALUE`
+```ini
+GEMINI_API_KEY=AIzaSy...          # Secure Gemini model key
+RAZORPAY_KEY_ID=rzp_live_...       # Live Payment API client identification
+RAZORPAY_KEY_SECRET=...            # HMAC signing hash key
+SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
+```
 
 ---
 
-## Setup and Run
+## Setup and Local Run
 
-### Prerequisites
-
-- Node.js 18+ recommended
-- npm (or Bun)
-- Supabase project
-
-### Install
-
+### Installation
 ```bash
 npm install
 ```
 
-or
-
-```bash
-bun install
-```
-
-### Run development server
-
+### Run Local Server
 ```bash
 npm run dev
 ```
+Access local environment at `http://localhost:8080`.
 
-Default Vite dev server:
-- `http://localhost:8080`
-
-### Build
-
+### Build Verification
+To perform a local optimal production compile:
 ```bash
 npm run build
 ```
 
 ---
 
-## Database Schema and RLS
+## Database Architecture & Relations
 
-Migration: `supabase/migrations/001_initial_schema.sql`
+### Relationships (ERD Model)
 
-### Tables
+```mermaid
+erDiagram
+    "auth.users" ||--o{ "compositions" : "creates"
+    "auth.users" ||--o{ "orders" : "owns"
+    "auth.users" ||--o{ "generation_quota" : "tracks"
+    "compositions" ||--o| "orders" : "ordered_as"
 
-#### `public.compositions`
-- `id` UUID PK
-- `user_id` FK -> `auth.users(id)` (cascade delete)
-- `status` in `draft | processing | complete`
-- `memory_input` text
-- `refinements` jsonb
-- `generated_result` jsonb
-- `selected_format` text
-- timestamps: `created_at`, `updated_at`
+    "compositions" {
+        uuid id PK
+        uuid user_id FK
+        text status
+        text memory_input
+        jsonb refinements
+        jsonb generated_result
+        text selected_format
+        jsonb error_metadata
+        timestamptz created_at
+        timestamptz updated_at
+    }
 
-#### `public.orders`
-- `id` UUID PK
-- `user_id` FK -> `auth.users(id)` (cascade delete)
-- `composition_id` FK -> `public.compositions(id)` (set null on delete)
-- `status` in `pending | confirmed | fulfilled | cancelled`
-- `format`, `price_cents`, `metadata`
-- `created_at`
+    "orders" {
+        uuid id PK
+        uuid user_id FK
+        uuid composition_id FK
+        text status
+        text format
+        int4 price_cents
+        jsonb metadata
+        text razorpay_order_id
+        text razorpay_payment_id
+        text razorpay_signature
+        timestamptz payment_verified_at
+        timestamptz created_at
+    }
 
-### RLS
+    "generation_quota" {
+        uuid id PK
+        uuid user_id FK
+        timestamptz created_at
+    }
+```
 
-Enabled on both tables.
-
-Policies:
-- `compositions`: authenticated users can `SELECT`, `INSERT`, `UPDATE` only own rows (`user_id = auth.uid()`)
-- `orders`: authenticated users can `SELECT`, `INSERT` only own rows
-
-### Trigger
-
-`moddatetime` trigger updates `compositions.updated_at` before updates.
+### Row Level Security (RLS)
+Enforced strictly across all custom tables. Authenticated user IDs (`auth.uid()`) are verified against `user_id` attributes on all operations, ensuring cross-tenant data isolation.
 
 ---
 
-## Edge Functions
+## Edge Functions API
+
+Edge Functions run on Deno and support cross-origin requests from the standard Vercel and localhost environments.
 
 ### `generate-fragrance`
-Path: `supabase/functions/generate-fragrance/index.ts`
-
-Responsibilities:
-- Verifies bearer token and user
-- Validates input `{ composition_id }`
-- Ensures composition belongs to caller
-- Calls Gemini 2.5 Flash with strict JSON response contract
-- Retries once if JSON parse fails
-- Updates composition:
-  - `status = processing` before generation
-  - `generated_result` + `status = complete` on success
+- **Endpoint**: `POST /functions/v1/generate-fragrance`
+- **Input**: `{ composition_id }`
+- **Logic**: Reads user memory, throttles based on `generation_quota`, queries Gemini, updates state.
+- **Recovery**: Terminal errors revert status to `draft` and persist metadata into `error_metadata`.
 
 ### `create-order`
-Path: `supabase/functions/create-order/index.ts`
+- **Endpoint**: `POST /functions/v1/create-order`
+- **Input**: `{ composition_id, format, idempotency_key }`
+- **Logic**: Executes atomic SQL transaction creating records, assigning formatted INR rates, and marking locked flags.
 
-Responsibilities:
-- Verifies bearer token and user
-- Validates input `{ composition_id, format }`
-- Ensures composition is owned by caller and `status = complete`
-- Applies format pricing:
-  - `eau_de_parfum`: 8900
-  - `parfum`: 12900
-  - `oil`: 6900
-  - `candle`: 5900
-  - `diffuser`: 7900
-- Inserts order record
-- Updates `compositions.selected_format`
-- Returns `{ order_id, status, price_cents }`
+### `initiate-payment`
+- **Endpoint**: `POST /functions/v1/initiate-payment`
+- **Input**: `{ order_id }`
+- **Logic**: Looks up order metadata, invokes Razorpay Orders REST Endpoint, returns `razorpay_order_id` tokens back to UI.
 
-Payment integration:
-- Razorpay integration TODO is intentionally left in function/component comments.
+### `verify-payment`
+- **Endpoint**: `POST /functions/v1/verify-payment`
+- **Input**: `{ order_id, razorpay_order_id, razorpay_payment_id, razorpay_signature }`
+- **Logic**: Builds standard HMAC-SHA256 signatures verifying authentic web-origin and transitions orders to `confirmed`.
 
 ---
 
-## Frontend Data Layer
+## Frontend Engineering
 
-### Key hooks
-
-- `src/hooks/useCompositionActions.ts`
-  - `useCreateDraftComposition()`
-  - `useGenerateFragrance()`
-  - `useCreateOrder()`
-
-- `src/hooks/useCompositions.ts`
-  - `useCompositions(userId)` with query key `["compositions", userId]`
-  - `useOrderSummary(userId)` with query key `["orders-summary", userId]`
-
-### Key mapping utilities
-
-- `src/lib/compositions.ts`
-  - `parseGeneratedResult()`
-  - `toCompositionCardModel()`
-  - typed interfaces for generated fragrance payload and composition models
-
-### Important page logic
-
-- `src/pages/CreatePage.tsx`
-  - Handles wizard state
-  - Creates draft -> generates fragrance -> displays generated result
-  - Handles resume flow (`resume` query param)
-  - Handles checkout call (`create-order`)
-
-- `src/pages/DashboardPage.tsx`
-  - Loads real compositions and order summary
-  - Shows skeleton while loading
-  - Supports report resume navigation to `/create?resume={id}`
+*   **Consolidated Catalog**: The `src/lib/pricing.ts` utility provides standard models for `Eau de Parfum`, `Parfum Extrait`, `Fragrance Oil`, `Scented Candle`, and `Reed Diffuser`.
+*   **Payment Loader Hook**: Handled by a reactive document-injected element wrapper (`useRazorpay`) loading only when mounting the checkout view.
+*   **Resilience Engineering**: Added React boundary UI handling dynamic loading issues during the hydrated resume flow configurations.
 
 ---
 
-## Routing
+## Static & Behavioral Testing
 
-Defined in `src/App.tsx`:
-
-- `/` -> `Index`
-- `/create` -> `CreatePage`
-- `/auth` -> `AuthPage`
-- `/dashboard` -> `DashboardPage`
-- `*` -> `NotFound`
-
-Navbar is hidden on `/create`, `/auth`, `/dashboard`.
+*   **Linter**: Optimized configurations with zero active TS errors. (`npm run lint`).
+*   **Testing Library**: Implemented Vitest assertions with mock-hoisted navigations ensuring component safety.
+*   **Execution**: `npm run test`
 
 ---
 
-## Testing
+## Deployment Pipeline (CI/CD)
 
-- Unit tests: Vitest + Testing Library (`vitest.config.ts`)
-- Test environment: `jsdom`
-- Setup: `src/test/setup.ts`
-- Example test: `src/test/example.test.ts`
-- Playwright config exists (`playwright.config.ts`) but no dedicated script in `package.json`
-
----
-
-## Scripts
-
-From `package.json`:
-
-- `npm run dev` - start Vite dev server
-- `npm run build` - production build
-- `npm run build:dev` - development mode build
-- `npm run preview` - preview production build
-- `npm run lint` - run ESLint
-- `npm run test` - run Vitest once
-- `npm run test:watch` - run Vitest in watch mode
-
-Equivalent Bun usage: `bun run <script>`
-
----
-
-## Brand Assets
-
-- Main logo: `public/logo-full.png`
-- Favicon: `public/favicon.png`
-- Favicon link is configured in `index.html`
-- Reusable logo component: `src/components/BrandLogo.tsx`
-
----
-
-## Known Gaps and TODOs
-
-- Razorpay is not integrated yet (order creation only; no payment flow/webhooks)
-- Some UI actions remain placeholders (example: dashboard account address management)
-- Test coverage is currently minimal
-- Production deployment configuration/CI pipeline is not included in this repository
-
----
-
-## Notes
-
-- Supabase auth signup stores `full_name` in user metadata.
-- Signup uses `emailRedirectTo: window.location.origin`; configure valid redirect URLs in your Supabase project.
-- If you rotate Supabase or Gemini keys, update both frontend and functions env files accordingly.
+Automatically validated by GitHub Actions on each merge/pull request into main branches.
+The workflow covers:
+1.  Fresh standard dependency installs.
+2.  Full project linter verification.
+3.  Vitest unit regression suites execution.
+4.  Optimal production asset bundling and tree-shaking.
