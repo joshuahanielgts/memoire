@@ -84,9 +84,13 @@ const StepPurchase = ({
     }
     setPaying(true);
     try {
+      const functionsBaseUrl = import.meta.env.VITE_FUNCTIONS_URL 
+        ? import.meta.env.VITE_FUNCTIONS_URL 
+        : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+
       // 1. Get Razorpay order
       const initRes = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/initiate-payment`,
+        `${functionsBaseUrl}/initiate-payment`,
         {
           method: "POST",
           headers: {
@@ -115,7 +119,7 @@ const StepPurchase = ({
           try {
             // 3. Verify payment
             const verifyRes = await fetch(
-              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-payment`,
+              `${functionsBaseUrl}/verify-payment`,
               {
                 method: "POST",
                 headers: {
