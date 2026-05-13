@@ -14,7 +14,98 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      compositions: {
+        Row: {
+          id: string
+          user_id: string
+          status: "draft" | "processing" | "complete"
+          memory_input: string | null
+          refinements: Json | null
+          generated_result: Json | null
+          selected_format: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          status?: "draft" | "processing" | "complete"
+          memory_input?: string | null
+          refinements?: Json | null
+          generated_result?: Json | null
+          selected_format?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          status?: "draft" | "processing" | "complete"
+          memory_input?: string | null
+          refinements?: Json | null
+          generated_result?: Json | null
+          selected_format?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compositions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      orders: {
+        Row: {
+          id: string
+          user_id: string
+          composition_id: string | null
+          status: "pending" | "confirmed" | "fulfilled" | "cancelled"
+          format: string | null
+          price_cents: number | null
+          metadata: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          composition_id?: string | null
+          status?: "pending" | "confirmed" | "fulfilled" | "cancelled"
+          format?: string | null
+          price_cents?: number | null
+          metadata?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          composition_id?: string | null
+          status?: "pending" | "confirmed" | "fulfilled" | "cancelled"
+          format?: string | null
+          price_cents?: number | null
+          metadata?: Json | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_composition_id_fkey"
+            columns: ["composition_id"]
+            isOneToOne: false
+            referencedRelation: "compositions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

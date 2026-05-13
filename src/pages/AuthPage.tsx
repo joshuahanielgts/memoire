@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import BrandLogo from "@/components/BrandLogo";
 
 const AuthPage = () => {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -13,7 +14,20 @@ const AuthPage = () => {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const returnTo = searchParams.get("returnTo");
+  const rawReturnTo = searchParams.get("returnTo");
+
+  const SAFE_RETURN_PATHS = ["/dashboard", "/create"] as const;
+
+  const getSafeReturnTo = (raw: string | null): string => {
+    if (!raw) return "/";
+    const decoded = decodeURIComponent(raw);
+    if (decoded.startsWith("/") && SAFE_RETURN_PATHS.some((p) => decoded.startsWith(p))) {
+      return decoded;
+    }
+    return "/";
+  };
+
+  const returnTo = getSafeReturnTo(rawReturnTo);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,11 +59,11 @@ const AuthPage = () => {
     // Successful login — brief transition then redirect
     toast.success("Returning to your composition…");
     setTimeout(() => {
-      navigate(returnTo || "/");
+      navigate(returnTo);
     }, 800);
   };
 
-  const fromCheckout = returnTo === "/create?resume=checkout";
+  const fromCheckout = returnTo.startsWith("/create");
 
   const inputClass =
     "w-full bg-transparent border-b border-border/40 py-3 text-sm font-light text-foreground placeholder:text-muted-foreground/40 focus:border-accent focus:outline-none transition-colors duration-500";
@@ -59,9 +73,9 @@ const AuthPage = () => {
       {/* Brand */}
       <Link
         to="/"
-        className="absolute top-6 left-6 md:left-12 font-serif text-lg text-foreground hover:text-accent transition-colors duration-500"
+        className="absolute top-6 left-6 md:left-12 hover:opacity-90 transition-opacity duration-500"
       >
-        MÉMOIRE
+        <BrandLogo className="h-14 md:h-16 w-auto" />
       </Link>
 
       <div className="w-full max-w-md space-y-12">

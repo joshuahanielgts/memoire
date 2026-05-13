@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import BrandLogo from "@/components/BrandLogo";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -42,9 +43,9 @@ const Navbar = () => {
         {/* Brand */}
         <Link
           to="/"
-          className="font-serif text-xl tracking-[0.12em] text-foreground hover:text-accent transition-colors duration-500 leading-none"
+          className="hover:opacity-90 transition-opacity duration-500"
         >
-          MÉMOIRE
+          <BrandLogo className="h-20 md:h-14 w-auto" />
         </Link>
 
         {/* Center links */}

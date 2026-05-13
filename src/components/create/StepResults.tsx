@@ -12,11 +12,12 @@ const StepResults = ({ compositions, onSelect }: StepResultsProps) => {
         <div className="text-center space-y-4">
           <p className="text-muted-foreground tracking-[0.3em] text-xs uppercase font-sans">Your Compositions</p>
           <h2 className="font-serif text-3xl md:text-5xl text-foreground font-light">
-            Three scents, composed for you
+            Your bespoke composition
           </h2>
-          <p className="text-muted-foreground text-sm font-light">Select the one that resonates most.</p>
+          <p className="text-muted-foreground text-sm font-light">Explore and select your scent profile.</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="flex justify-center">
+          <div className="w-full max-w-md">
           {compositions.map((comp) => (
             <button
               key={comp.id}
@@ -38,6 +39,7 @@ const StepResults = ({ compositions, onSelect }: StepResultsProps) => {
               </p>
             </button>
           ))}
+          </div>
         </div>
       </div>
     </div>

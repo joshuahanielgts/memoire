@@ -1,74 +1,59 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useReveal } from "@/hooks/useReveal";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCompositions, useOrderSummary } from "@/hooks/useCompositions";
+import { parseGeneratedResult } from "@/lib/compositions";
+import BrandLogo from "@/components/BrandLogo";
 
 const statusSteps = [
-  "Composition Received",
-  "In Formulation",
-  "In Evaluation",
-  "Approved for Bottling",
-  "Bottling in Progress",
-  "Quality Check",
-  "Packed",
-  "Out for Delivery",
-  "Delivered",
-];
-
-const activeCompositions = [
-  {
-    id: "ID 4821-09-15",
-    name: "Encre Noire",
-    mood: "Dark & Magnetic",
-    status: "In Formulation",
-    notes: "Oud, Black Pepper, Vetiver",
-    date: "2026-03-28",
-  },
-  {
-    id: "ID 4821-09-22",
-    name: "Sous la Pluie",
-    mood: "Fresh & Contemplative",
-    status: "Bottling in Progress",
-    notes: "Petrichor, Iris, Cedar",
-    date: "2026-03-15",
-  },
-  {
-    id: "ID 4821-09-30",
-    name: "Premier Baiser",
-    mood: "Warm & Intimate",
-    status: "Out for Delivery",
-    notes: "Rose, Musk, Vanilla",
-    date: "2026-02-20",
-  },
-];
-
-const pastCompositions = [
-  {
-    id: "ID 4821-08-04",
-    name: "Dernier Été",
-    mood: "Bright & Nostalgic",
-    status: "Delivered",
-    date: "2025-12-10",
-  },
-  {
-    id: "ID 4821-07-11",
-    name: "Chambre d'Ambre",
-    mood: "Warm & Enveloping",
-    status: "Archived",
-    date: "2025-09-05",
-  },
+  "Draft",
+  "Processing",
+  "Complete",
 ];
 
 const getStatusIndex = (status: string) => statusSteps.indexOf(status);
 
+const formatStatusLabel = (status: string) => {
+  if (status === "draft") return "Draft";
+  if (status === "processing") return "Processing";
+  if (status === "complete") return "Complete";
+  return status;
+};
+
 const DashboardPage = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const reveal1 = useReveal(); 
   const reveal2 = useReveal();
   const reveal3 = useReveal();
   const reveal4 = useReveal();
+  const { data: compositions = [], isLoading: compositionsLoading } = useCompositions(user?.id);
+  const { data: orderSummary } = useOrderSummary(user?.id);
 
   const displayName =
     user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Guest";
+
+  const compositionModels = compositions.map((composition) => {
+    const generated = parseGeneratedResult(composition.generated_result);
+    return {
+      id: composition.id,
+      name: generated?.name ?? "Untitled Composition",
+      mood: generated?.mood_profile?.join(" · ") || "Custom Fragrance",
+      status: formatStatusLabel(composition.status),
+      notes: generated
+        ? [...generated.top_notes, ...generated.heart_notes, ...generated.base_notes]
+            .filter(Boolean)
+            .slice(0, 3)
+            .join(", ")
+        : "Awaiting generated profile",
+      date: composition.created_at?.slice(0, 10) ?? "",
+      selectedFormat: composition.selected_format ?? "Not selected",
+    };
+  });
+
+  const activeCompositions = compositionModels.filter((composition) => composition.status !== "Complete");
+  const pastCompositions = compositionModels.filter((composition) => composition.status === "Complete");
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,9 +61,9 @@ const DashboardPage = () => {
       <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-6 bg-background/90 backdrop-blur-md border-b border-border/20">
         <Link
           to="/"
-          className="font-serif text-lg text-foreground hover:text-accent transition-colors duration-500"
+          className="hover:opacity-90 transition-opacity duration-500"
         >
-          MÉMOIRE
+          <BrandLogo className="h-14 md:h-16 w-auto" />
         </Link>
         <div className="flex items-center gap-8">
           <Link
@@ -106,8 +91,8 @@ const DashboardPage = () => {
             Welcome back, {displayName}
           </h1>
           <p className="text-muted-foreground text-sm font-light max-w-lg">
-            Track your fragrances, view scent reports, and follow your active
-            orders.
+            Track your fragrances, view scent reports, and follow your active orders. Total orders:{" "}
+            {orderSummary?.orderCount ?? 0}
           </p>
         </div>
 
@@ -123,7 +108,13 @@ const DashboardPage = () => {
           </div>
 
           <div className="space-y-4">
-            {activeCompositions.map((comp) => {
+            {compositionsLoading && (
+              <>
+                <Skeleton className="h-36 w-full" />
+                <Skeleton className="h-36 w-full" />
+              </>
+            )}
+            {!compositionsLoading && activeCompositions.map((comp) => {
               const stepIdx = getStatusIndex(comp.status);
               const progress =
                 stepIdx >= 0
@@ -169,6 +160,11 @@ const DashboardPage = () => {
                 </div>
               );
             })}
+            {!compositionsLoading && activeCompositions.length === 0 && (
+              <p className="text-muted-foreground/50 text-xs font-light">
+                No active compositions yet.
+              </p>
+            )}
           </div>
         </div>
 
@@ -184,7 +180,13 @@ const DashboardPage = () => {
           </div>
 
           <div className="space-y-3">
-            {pastCompositions.map((comp) => (
+            {compositionsLoading && (
+              <>
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </>
+            )}
+            {!compositionsLoading && pastCompositions.map((comp) => (
               <div
                 key={comp.id}
                 className="flex items-center justify-between border-b border-border/20 py-5 group"
@@ -194,19 +196,27 @@ const DashboardPage = () => {
                     {comp.name}
                   </h3>
                   <p className="text-muted-foreground/40 text-[10px] tracking-[0.15em] uppercase font-sans">
-                    {comp.id} · {comp.mood} · {comp.date}
+                    {comp.id} · {comp.selectedFormat} · {comp.date}
                   </p>
                 </div>
                 <div className="flex items-center gap-6">
                   <span className="text-muted-foreground/40 text-[10px] tracking-[0.15em] uppercase font-sans">
                     {comp.status}
                   </span>
-                  <button className="text-[10px] tracking-[0.15em] uppercase font-sans text-accent hover:text-foreground transition-colors duration-500">
+                  <button
+                    onClick={() => navigate(`/create?resume=${comp.id}`)}
+                    className="text-[10px] tracking-[0.15em] uppercase font-sans text-accent hover:text-foreground transition-colors duration-500"
+                  >
                     View Report
                   </button>
                 </div>
               </div>
             ))}
+            {!compositionsLoading && pastCompositions.length === 0 && (
+              <p className="text-muted-foreground/50 text-xs font-light">
+                No completed compositions yet.
+              </p>
+            )}
           </div>
         </div>
 
